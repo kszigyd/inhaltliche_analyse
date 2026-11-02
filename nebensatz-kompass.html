@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nebensatz-Kompass</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Literata:ital,opsz,wght@0,7..72,400;1,7..72,400;1,7..72,500&display=swap">
+<style>
+/* Layout: eine Lernspalte (max. 980px) mit Stationen 1–6; jede Satzart hat eine feste Farbe, die überall gleich bleibt */
+:root{
+  --bg:#f2f4f8; --surface:#ffffff; --ink:#172031; --muted:#586377; --line:#d6dbe4; --soft:#e8ecf2; --on-c:#ffffff;
+  --f-display:"Bricolage Grotesque","Avenir Next",system-ui,sans-serif;
+  --f-body:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-sent:"Literata",Georgia,"Times New Roman",serif;
+  --kaus:#c2410c; --kons:#0f766e; --fin:#7c3aed; --kond:#a16207; --konz:#be123c; --adv:#4b5a70; --mod:#4d7c0f; --temp:#1d4ed8;
+  --ok:#15803d; --bad:#b91c1c;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f131a; --surface:#171d27; --ink:#e7ebf2; --muted:#9da7b8; --line:#2c3543; --soft:#1f2632; --on-c:#0f131a;
+    --kaus:#fb923c; --kons:#2dd4bf; --fin:#b49bfc; --kond:#facc15; --konz:#fb7185; --adv:#a9b8cc; --mod:#a3e635; --temp:#6aa8ff;
+    --ok:#4ade80; --bad:#f87171; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f131a; --surface:#171d27; --ink:#e7ebf2; --muted:#9da7b8; --line:#2c3543; --soft:#1f2632; --on-c:#0f131a;
+  --kaus:#fb923c; --kons:#2dd4bf; --fin:#b49bfc; --kond:#facc15; --konz:#fb7185; --adv:#a9b8cc; --mod:#a3e635; --temp:#6aa8ff;
+  --ok:#4ade80; --bad:#f87171; color-scheme:dark;
+}
+.t-kaus{--c:var(--kaus)} .t-kons{--c:var(--kons)} .t-fin{--c:var(--fin)} .t-kond{--c:var(--kond)}
+.t-konz{--c:var(--konz)} .t-adv{--c:var(--adv)} .t-mod{--c:var(--mod)} .t-temp{--c:var(--temp)}
+
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+.wrap{max-width:980px;margin:0 auto;padding-block:36px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:56px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.15;text-wrap:balance;margin:0}
+h1{font-size:clamp(2rem,5vw,3.1rem);font-weight:800;letter-spacing:-.02em}
+h2{font-size:clamp(1.45rem,3vw,1.9rem);font-weight:800;letter-spacing:-.01em}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0}
+.eyebrow{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.lede{max-width:62ch;color:var(--muted);font-size:1.08rem}
+section{display:flex;flex-direction:column;gap:20px;scroll-margin-top:16px}
+.sec-head{display:flex;flex-direction:column;gap:8px}
+.sec-head .num{font-family:var(--f-display);font-weight:800;color:var(--muted);font-size:.95rem}
+.prose{max-width:66ch}
+header{display:flex;flex-direction:column;gap:16px}
+nav{display:flex;flex-wrap:wrap;gap:8px}
+nav a{color:var(--ink);text-decoration:none;border:1px solid var(--line);background:var(--surface);padding:6px 12px;border-radius:999px;font-size:.9rem}
+nav a:hover{border-color:var(--ink)}
+a:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible{outline:3px solid var(--temp);outline-offset:2px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px}
+.dot{display:inline-block;width:.7em;height:.7em;border-radius:3px;background:var(--c);vertical-align:.02em;margin-right:.4em}
+.sent{font-family:var(--f-sent)}
+
+/* 1 Überblick */
+.group-label{font-weight:700;font-size:.95rem;display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.group-label span{color:var(--muted);font-weight:400}
+.cards{display:grid;gap:12px}
+.cards.five{grid-template-columns:repeat(5,minmax(0,1fr))}
+.cards.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c);border-radius:4px 4px 12px 12px;padding:14px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{color:var(--c)}
+.card .q{font-weight:700;font-size:1.02rem;line-height:1.3}
+.card .lat{font-size:.82rem;color:var(--muted)}
+.card .konj{font-size:.86rem;margin-top:auto;padding-top:8px;border-top:1px dashed var(--line)}
+@media (max-width:860px){.cards.five{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.cards.five,.cards.three{grid-template-columns:1fr}}
+
+/* 2 Pfeil-Schema */
+.schema{display:flex;flex-direction:column;gap:10px}
+.chain,.chain-head{display:grid;grid-template-columns:150px minmax(0,1fr) 110px minmax(0,1fr);gap:10px;align-items:center}
+.chain-head{font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.chain-head div:nth-child(2),.chain-head div:nth-child(4){text-align:center;border-bottom:2px solid var(--line);padding-bottom:4px}
+.chain{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.chain-name b{display:block;color:var(--c);font-family:var(--f-display);font-size:1.05rem}
+.chain-name span{font-size:.84rem;color:var(--muted)}
+.slot{border:2px solid var(--line);border-radius:10px;padding:8px 12px;min-height:64px;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.slot small{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.slot p{font-family:var(--f-sent);font-size:.98rem;line-height:1.35}
+.slot.ns{border-color:var(--c);background:color-mix(in srgb,var(--c) 13%,var(--surface))}
+.slot.ns small{color:var(--c)}
+.slot.dashed{border-style:dashed}
+.slot s{color:var(--muted);font-size:.86rem}
+.arrow{position:relative;height:58px}
+.arrow::before{content:"";position:absolute;left:4px;right:14px;top:50%;border-top:3px solid var(--c);transform:translateY(-1px)}
+.arrow::after{content:"";position:absolute;right:2px;top:50%;transform:translateY(-50%);border-style:solid;border-width:8px 0 8px 13px;border-color:transparent transparent transparent var(--c)}
+.arrow.dashed::before{border-top-style:dashed}
+.arrow.dotted::before{border-top-style:dotted;border-top-width:4px}
+.arrow .lab{position:absolute;left:0;right:0;bottom:0;text-align:center;font-size:.74rem;color:var(--muted);line-height:1.1}
+.arrow .mark{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--surface);color:var(--c);font-family:var(--f-display);font-weight:800;font-size:1.25rem;padding:0 5px;line-height:1}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:.88rem;color:var(--muted)}
+.legend i{font-style:normal;display:inline-block;width:34px;border-top:3px solid var(--ink);vertical-align:middle;margin-right:6px}
+.legend i.d{border-top-style:dashed}.legend i.o{border-top-style:dotted;border-top-width:4px}
+.legend .sw{display:inline-block;width:14px;height:14px;border-radius:4px;border:2px solid var(--muted);vertical-align:-2px;margin-right:6px}
+.legend .sw.f{background:color-mix(in srgb,var(--muted) 30%,var(--surface))}
+@media (max-width:700px){
+  .chain-head{display:none}
+  .chain{grid-template-columns:1fr;gap:6px}
+  .arrow{height:46px}
+  .arrow::before{left:24px;right:auto;top:4px;bottom:14px;border-top:0;border-left:3px solid var(--c);transform:none}
+  .arrow.dashed::before{border-left-style:dashed}
+  .arrow.dotted::before{border-left-style:dotted;border-left-width:4px}
+  .arrow::after{left:18px;right:auto;top:auto;bottom:2px;transform:none;border-width:13px 8px 0 8px;border-color:var(--c) transparent transparent transparent}
+  .arrow .lab{left:44px;right:0;top:50%;bottom:auto;transform:translateY(-50%);text-align:left}
+  .arrow .mark{left:25px}
+}
+
+.compare{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:700px){.compare{grid-template-columns:1fr}}
+.compare .panel{display:flex;flex-direction:column;gap:12px}
+.pair{display:grid;gap:8px}
+.pair .ex{border-left:4px solid var(--c);padding:6px 0 6px 12px;font-family:var(--f-sent)}
+.pair .ex b{font-family:var(--f-body);font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--c);display:block}
+u.ns{text-decoration:none;background:color-mix(in srgb,var(--c) 18%,transparent);border-radius:3px;padding:0 2px}
+.checks{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:8px}
+.checks li::marker{font-weight:700;color:var(--muted)}
+
+/* 3 Zeit, Weg, Gegensatz */
+.timeline{display:flex;flex-direction:column;gap:16px}
+.tl-row{display:grid;grid-template-columns:150px minmax(0,1fr);gap:14px 16px;align-items:center;background:color-mix(in srgb,var(--c) 7%,var(--surface));border:1px solid color-mix(in srgb,var(--c) 30%,var(--line));border-radius:12px;padding:16px 18px}
+.tl-row .tl-name{align-self:start;font-family:var(--f-display);font-size:1.05rem;color:var(--c);padding-top:2px}
+.tl-row .tl-name span{font-family:var(--f-body)}
+.tl-row .tl-name{font-weight:700;font-size:.92rem}
+.tl-row .tl-name span{display:block;font-weight:400;color:var(--muted);font-size:.82rem}
+.track{position:relative;display:grid;grid-template-columns:repeat(12,1fr);row-gap:4px;padding-bottom:16px;border-bottom:2px solid var(--line)}
+.track::after{content:"Zeit →";position:absolute;right:0;bottom:-2px;transform:translateY(100%);font-size:.72rem;color:var(--muted)}
+.bar{border-radius:6px;padding:3px 8px;font-size:.8rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar.ns{background:var(--c);color:var(--on-c);font-weight:700}
+.bar.hs{background:var(--surface);border:1px solid var(--line)}
+.tl-ex{font-family:var(--f-sent);font-size:.92rem;color:var(--ink);grid-column:2;margin-top:8px}
+@media (max-width:560px){.tl-row{grid-template-columns:1fr}.tl-ex{grid-column:1}}
+.trio{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+@media (max-width:700px){.trio{grid-template-columns:1fr}}
+.trio .panel{display:flex;flex-direction:column;gap:12px}
+.duo{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:stretch}
+.duo .vs{align-self:center;font-family:var(--f-display);font-weight:800;color:var(--c);font-size:1.4rem}
+.how{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+.how .link{justify-self:start;margin-left:22px;border-left:3px solid var(--c);padding:6px 0 6px 12px;font-size:.82rem;color:var(--muted)}
+.note{font-size:.9rem;color:var(--muted)}
+.note b{color:var(--ink)}
+
+/* 4 Bestimmungsweg */
+.tree{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);gap:20px}
+@media (max-width:760px){.tree{grid-template-columns:1fr}}
+.trail{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;counter-reset:st}
+.trail li{counter-increment:st;display:grid;grid-template-columns:26px 1fr;gap:8px;font-size:.88rem;align-items:start}
+.trail li::before{content:counter(st);width:24px;height:24px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:.78rem}
+.trail li button{all:unset;cursor:pointer;color:var(--muted)}
+.trail li button:hover{color:var(--ink);text-decoration:underline}
+.trail li b{color:var(--ink);font-weight:700}
+.trail .empty{color:var(--muted);font-size:.9rem}
+.node{display:flex;flex-direction:column;gap:14px}
+.node .q{font-family:var(--f-display);font-weight:600;font-size:1.3rem;line-height:1.25}
+.node .hint{font-size:.9rem;color:var(--muted);background:var(--soft);border-radius:8px;padding:8px 12px}
+.opts{display:flex;flex-wrap:wrap;gap:10px}
+.btn{font:inherit;font-weight:700;cursor:pointer;border-radius:10px;padding:10px 16px;border:2px solid var(--ink);background:var(--surface);color:var(--ink)}
+.btn:hover{background:var(--soft)}
+.btn.primary{background:var(--ink);color:var(--bg)}
+.btn.primary:hover{opacity:.9}
+.btn.ghost{border-color:var(--line);font-weight:400}
+.result{border:2px solid var(--c);border-radius:12px;padding:16px;background:color-mix(in srgb,var(--c) 10%,var(--surface));display:flex;flex-direction:column;gap:6px}
+.result h3{color:var(--c);font-size:1.4rem}
+.sample{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sample input{flex:1 1 260px;min-width:0;font:inherit;font-family:var(--f-sent);padding:9px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+
+/* 5 Proben */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:.92rem}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+tr:last-child td{border-bottom:0}
+td.tn{font-weight:700;color:var(--c);white-space:nowrap}
+td .sent{font-size:.9rem}
+.traps{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:700px){.traps{grid-template-columns:1fr}}
+.trap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.trap h3{font-family:var(--f-sent);font-style:italic;font-weight:500;font-size:1.35rem}
+.trap ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.trap li{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:baseline}
+.chip{display:inline-block;border-radius:6px;padding:1px 8px;font-size:.76rem;font-weight:700;background:var(--c);color:var(--on-c);white-space:nowrap}
+
+/* 6 Üben */
+.quiz{display:flex;flex-direction:column;gap:16px}
+.quiz-top{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{font:inherit;font-size:.88rem;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.score{font-variant-numeric:tabular-nums;font-weight:700}
+.progress{height:6px;background:var(--soft);border-radius:999px;overflow:hidden}
+.progress span{display:block;height:100%;background:var(--ink);width:0;transition:width .3s}
+.qcount{font-size:.85rem;color:var(--muted)}
+.qsent{font-family:var(--f-sent);font-size:clamp(1.2rem,2.6vw,1.5rem);line-height:1.45}
+.qsent .nsmark{border-bottom:3px solid var(--muted);padding-bottom:1px}
+.qsent.done .nsmark{border-bottom-color:var(--c);background:color-mix(in srgb,var(--c) 14%,transparent)}
+.qhelp{font-size:.82rem;color:var(--muted)}
+.choices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:640px){.choices{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.choice{font:inherit;font-weight:700;cursor:pointer;text-align:left;border:2px solid var(--c);color:var(--c);background:var(--surface);border-radius:10px;padding:10px 12px;line-height:1.2}
+.choice:hover:not(:disabled){background:color-mix(in srgb,var(--c) 10%,var(--surface))}
+.choice:disabled{cursor:default;opacity:.45}
+.choice.right{opacity:1;background:var(--c);color:var(--on-c)}
+.choice.wrong{opacity:1;border-style:dashed;text-decoration:line-through}
+.feedback{border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;border:2px solid var(--line)}
+.feedback.ok{border-color:var(--ok)}
+.feedback.no{border-color:var(--bad)}
+.feedback .verdict{font-weight:700}
+.feedback.ok .verdict{color:var(--ok)}
+.feedback.no .verdict{color:var(--bad)}
+.mini{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:.84rem}
+.mini .m{border:2px solid var(--line);border-radius:8px;padding:3px 8px}
+.mini .m.ns{border-color:var(--c);background:color-mix(in srgb,var(--c) 14%,var(--surface));font-weight:700}
+.mini .ma{color:var(--c);font-weight:800}
+.qactions{display:flex;gap:10px;flex-wrap:wrap}
+.tipbox{font-size:.9rem;background:var(--soft);border-radius:10px;padding:10px 14px}
+.tipbox ul{margin:6px 0 0;padding-left:1.2em}
+.summary{display:flex;flex-direction:column;gap:12px}
+.summary .big{font-family:var(--f-display);font-weight:800;font-size:2.2rem}
+.summary ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px}
+
+.trans-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.trans-list{grid-template-columns:1fr}}
+.trans{display:flex;flex-direction:column;gap:10px}
+.facts{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-family:var(--f-sent)}
+.facts span{border:1px solid var(--line);border-radius:8px;padding:3px 8px;background:var(--soft)}
+.facts .ar{border:0;background:none;padding:0;color:var(--muted);font-family:var(--f-body)}
+.trans label{font-size:.8rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.trans textarea{font:inherit;font-family:var(--f-sent);min-height:52px;resize:vertical;padding:8px 10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);width:100%;box-sizing:border-box}
+.sol{display:flex;flex-direction:column;gap:6px;font-family:var(--f-sent);font-size:.95rem;border-top:1px dashed var(--line);padding-top:10px}
+.sol b{font-family:var(--f-body);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--c)}
+footer{color:var(--muted);font-size:.85rem;border-top:1px solid var(--line);padding-top:16px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto!important}}
+html{scroll-behavior:smooth}
+</style>
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <p class="eyebrow">Deutsch · Satzlehre · Adverbialsätze</p>
+  <h1>Nebensätze inhaltlich bestimmen</h1>
+  <p class="lede">Acht Satzarten, eine Frage: In welchem Verhältnis steht der Nebensatz zum Hauptsatz? Diese Seite zeigt die Verhältnisse als Schema, gibt dir Proben an die Hand – und lässt dich üben.</p>
+</header>
+
+<!-- 1 -->
+<section id="ueberblick">
+  <div class="sec-head">
+    <span class="num">1</span>
+    <h2>Jede Satzart beantwortet eine Frage</h2>
+    <p class="prose">Fünf der acht Satzarten gehören zur gleichen Familie: Sie drehen sich alle um <b>Ursache und Wirkung</b>. Darum werden sie so oft verwechselt. Die anderen drei stehen für sich.</p>
+  </div>
+  <p class="group-label">Familie «Ursache und Wirkung» <span>Kausal · Konsekutiv · Final · Konditional · Konzessiv</span></p>
+  <div class="cards five" id="cards-fam"></div>
+  <p class="group-label">Zeit, Weg, Gegensatz <span>Temporal · Modal · Adversativ</span></p>
+  <div class="cards three" id="cards-rest"></div>
+</section>
+
+<!-- 2 -->
+<section id="pfeil">
+  <div class="sec-head">
+    <span class="num">2</span>
+    <h2>Das Pfeil-Schema: Wo steht der Nebensatz?</h2>
+    <p class="prose">Stell dir jeden Satz der Familie als Pfeil vor: links die <b>Ursache</b>, rechts die <b>Wirkung</b>. Die Pfeilrichtung bleibt immer gleich. Was sich ändert: <b>auf welcher Seite der Nebensatz steht</b> – und wie der Pfeil aussieht.</p>
+  </div>
+  <div class="schema">
+    <div class="chain-head"><div></div><div>Ursache</div><div></div><div>Wirkung</div></div>
+
+    <div class="chain t-kaus">
+      <div class="chain-name"><b>Kausalsatz</b><span>NS = Ursache</span></div>
+      <div class="slot ns"><small>Nebensatz · Grund</small><p>weil ich eine gute Note haben will,</p></div>
+      <div class="arrow"><span class="lab">tatsächlich</span></div>
+      <div class="slot"><small>Hauptsatz · Wirkung</small><p>lerne ich viel für die Prüfung.</p></div>
+    </div>
+
+    <div class="chain t-kons">
+      <div class="chain-name"><b>Konsekutivsatz</b><span>NS = Wirkung</span></div>
+      <div class="slot"><small>Hauptsatz · Ursache</small><p>Ich vergass zu lernen,</p></div>
+      <div class="arrow"><span class="lab">tatsächlich</span></div>
+      <div class="slot ns"><small>Nebensatz · Folge</small><p>sodass ich an der Prüfung fast nichts wusste.</p></div>
+    </div>
+
+    <div class="chain t-fin">
+      <div class="chain-name"><b>Finalsatz</b><span>NS = gewollte Wirkung</span></div>
+      <div class="slot"><small>Hauptsatz · Handlung</small><p>Ich lerne viel für die Prüfung,</p></div>
+      <div class="arrow dashed"><span class="lab">beabsichtigt</span></div>
+      <div class="slot ns dashed"><small>Nebensatz · Ziel (im Kopf)</small><p>damit ich eine gute Note erhalte.</p></div>
+    </div>
+
+    <div class="chain t-kond">
+      <div class="chain-name"><b>Konditionalsatz</b><span>NS = angenommene Ursache</span></div>
+      <div class="slot ns dashed"><small>Nebensatz · Bedingung</small><p>Falls wir viel Stoff haben werden,</p></div>
+      <div class="arrow dotted"><span class="mark">?</span><span class="lab">nur angenommen</span></div>
+      <div class="slot"><small>Hauptsatz · Folge</small><p>lerne ich viel für die Prüfung.</p></div>
+    </div>
+
+    <div class="chain t-konz">
+      <div class="chain-name"><b>Konzessivsatz</b><span>NS = Ursache ohne Wirkung</span></div>
+      <div class="slot ns"><small>Nebensatz · Gegengrund</small><p>Obwohl ich viel gelernt habe,</p></div>
+      <div class="arrow"><span class="mark">✕</span><span class="lab">Erwartung enttäuscht</span></div>
+      <div class="slot"><small>Hauptsatz · trotzdem</small><s>erwartet: Ich war erfolgreich.</s><p>war ich nicht besonders erfolgreich.</p></div>
+    </div>
+
+    <div class="legend" aria-label="Legende">
+      <span><span class="sw f"></span>farbig = Nebensatz</span>
+      <span><span class="sw"></span>weiss = Hauptsatz</span>
+      <span><i></i>passiert wirklich</span>
+      <span><i class="d"></i>gewollt, nur im Kopf</span>
+      <span><i class="o"></i>? nur angenommen</span>
+      <span>✕ erwartete Wirkung bleibt aus</span>
+    </div>
+  </div>
+
+  <div class="compare">
+    <div class="panel">
+      <h3>Kausal oder konsekutiv? Ein Sachverhalt, zwei Blickrichtungen</h3>
+      <div class="pair">
+        <p class="ex t-kaus"><b>Kausal · NS links</b><u class="ns">Weil ich nicht lernte,</u> wusste ich fast nichts.</p>
+        <p class="ex t-kons"><b>Konsekutiv · NS rechts</b>Ich lernte nicht, <u class="ns">sodass ich fast nichts wusste.</u></p>
+      </div>
+      <ol class="checks">
+        <li><b>Zeitprobe:</b> Was geschieht zuerst? Die Ursache ist immer früher. Ist der Nebensatz das Frühere, ist er kausal; ist er das Spätere, ist er konsekutiv.</li>
+        <li><b>deshalb-Probe:</b> Mach zwei Hauptsätze und verbinde sie mit «deshalb». Steht der NS-Inhalt <i>vor</i> «deshalb», ist er kausal; steht er <i>nach</i> «deshalb», ist er konsekutiv.</li>
+        <li><b>Fragewort:</b> «Warum?» schaut zurück (kausal). «Mit welcher Folge?» schaut nach vorn (konsekutiv).</li>
+      </ol>
+    </div>
+    <div class="panel">
+      <h3>Konsekutiv oder final? Wirklichkeit oder Absicht</h3>
+      <div class="pair">
+        <p class="ex t-kons"><b>Konsekutiv · ist passiert</b>Er erklärte es so deutlich, <u class="ns">dass alle es verstanden.</u></p>
+        <p class="ex t-fin"><b>Final · ist gewollt</b>Er erklärte es noch einmal, <u class="ns">damit alle es verstanden.</u></p>
+      </div>
+      <ol class="checks">
+        <li><b>«Aber es klappte nicht»-Probe:</b> Hänge den Zusatz an. Ergibt sich ein Widerspruch, ist die Folge wirklich eingetreten (konsekutiv). Geht es ohne Widerspruch, war sie nur ein Ziel (final).</li>
+        <li><b>um-zu-Probe:</b> Ein Finalsatz lässt sich bei gleichem Subjekt oft in «um … zu» umformen: «Ich lerne, um eine gute Note zu erhalten.»</li>
+        <li><b>Signal:</b> «so» + Adjektiv im Hauptsatz kündigt meist eine Folge an («so deutlich, dass …»).</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section id="zeit">
+  <div class="sec-head">
+    <span class="num">3</span>
+    <h2>Zeit, Weg, Gegensatz</h2>
+    <p class="prose">Bei diesen drei Satzarten gibt es keinen Ursache-Wirkungs-Pfeil. Sie ordnen den Hauptsatz auf einer Zeitachse ein, beschreiben den Weg dorthin oder stellen zwei Seiten nebeneinander.</p>
+  </div>
+
+  <div class="panel t-temp">
+    <h3><span class="dot"></span>Temporalsatz: Wo liegt der Nebensatz auf der Zeitachse?</h3>
+    <div class="timeline" style="margin-top:14px">
+      <div class="tl-row">
+        <p class="tl-name">NS vorher<span>nachdem, als, sobald, seit</span></p>
+        <div class="track">
+          <span class="bar ns" style="grid-column:1/6">NS: Training</span>
+          <span class="bar hs" style="grid-column:6/12">HS: lernen</span>
+        </div>
+        <p class="tl-ex"><u class="ns">Nachdem ich mit dem Training fertig war,</u> lernte ich auf die Prüfung.</p>
+      </div>
+      <div class="tl-row">
+        <p class="tl-name">NS gleichzeitig<span>während, solange, als, wenn</span></p>
+        <div class="track">
+          <span class="bar ns" style="grid-column:2/11;grid-row:1">NS: Busfahrt</span>
+          <span class="bar hs" style="grid-column:3/9;grid-row:2">HS: lesen</span>
+        </div>
+        <p class="tl-ex"><u class="ns">Während der Bus fuhr,</u> las ich meine Notizen.</p>
+      </div>
+      <div class="tl-row">
+        <p class="tl-name">NS nachher<span>bevor, bis, ehe</span></p>
+        <div class="track">
+          <span class="bar hs" style="grid-column:1/8">HS: lernen</span>
+          <span class="bar ns" style="grid-column:8/13">NS: dunkel</span>
+        </div>
+        <p class="tl-ex">Ich lernte, <u class="ns">bis es dunkel wurde.</u></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="trio">
+    <div class="panel t-mod">
+      <h3><span class="dot"></span>Modalsatz: der Weg zum Ziel</h3>
+      <div class="how">
+        <div class="slot"><small>Hauptsatz · Was geschieht?</small><p>Ich lernte die Begriffe,</p></div>
+        <span class="link">Wie? Womit? Auf welchem Weg?</span>
+        <div class="slot ns"><small>Nebensatz · Art und Weise</small><p>indem ich sie auf Wortkärtchen schrieb.</p></div>
+      </div>
+      <p class="note"><b>Probe:</b> «dadurch, dass …» oder zwei Hauptsätze mit «dabei»/«so». «als ob» und «wie wenn» vergleichen: Er rannte, <i>als ob</i> ein Hund hinter ihm her wäre.</p>
+    </div>
+    <div class="panel t-adv">
+      <h3><span class="dot"></span>Adversativsatz: zwei Seiten nebeneinander</h3>
+      <div class="duo">
+        <div class="slot"><small>Seite A · HS</small><p>Ich lerne immer viel für Prüfungen,</p></div>
+        <span class="vs" aria-label="gegenüber">⇄</span>
+        <div class="slot ns"><small>Seite B · NS</small><p>während du dich nie anstrengen musst.</p></div>
+      </div>
+      <p class="note"><b>Kein Pfeil:</b> Nichts bewirkt hier etwas, zwei Dinge werden verglichen. <b>Probe:</b> «wohingegen» oder «B dagegen …». Beim <span class="t-konz" style="color:var(--c);font-weight:700">Konzessivsatz</span> wird eine Erwartung enttäuscht («trotzdem»), beim Adversativsatz nur ein Gegensatz gezeigt («dagegen»).</p>
+    </div>
+  </div>
+</section>
+
+<!-- 5 -->
+<section id="proben">
+  <div class="sec-head">
+    <span class="num">4</span>
+    <h2>Vorsicht, doppeldeutig</h2>
+    <p class="prose">Manche Konjunktionen leiten verschiedene Satzarten ein. Ersetze sie durch eine eindeutige: Passt die Ersatzprobe ohne Bedeutungsänderung, hast du die Satzart.</p>
+  </div>
+  <div class="traps">
+    <div class="trap">
+      <h3>während</h3>
+      <ul>
+        <li><span class="chip t-temp">temporal</span><span>gleichzeitig → «solange»: <span class="sent">Während Lena im Zug sass, lernte sie.</span></span></li>
+        <li><span class="chip t-adv">adversativ</span><span>Gegensatz → «wohingegen»: <span class="sent">Lena lernt, während ihr Bruder spielt.</span></span></li>
+      </ul>
+    </div>
+    <div class="trap">
+      <h3>wenn</h3>
+      <ul>
+        <li><span class="chip t-temp">temporal</span><span>sicher, nur Zeitpunkt offen → «sobald», «jedes Mal, wenn»</span></li>
+        <li><span class="chip t-kond">konditional</span><span>offen, ob es eintritt → «falls»</span></li>
+        <li><span class="chip t-konz">konzessiv</span><span>«wenn auch», «auch wenn» → «obwohl»</span></li>
+      </ul>
+    </div>
+    <div class="trap">
+      <h3>dass</h3>
+      <ul>
+        <li><span class="chip t-kons">konsekutiv</span><span>«so … dass», Folge ist eingetreten</span></li>
+        <li><span class="chip t-fin">final</span><span>«dass» = «damit» (eher veraltet), Folge ist gewollt</span></li>
+        <li><span class="chip" style="--c:var(--muted)">kein Adverbialsatz</span><span>Oft ist ein dass-Satz Subjekt oder Objekt: <span class="sent">Ich weiss, dass …</span></span></li>
+      </ul>
+    </div>
+    <div class="trap">
+      <h3>als</h3>
+      <ul>
+        <li><span class="chip t-temp">temporal</span><span>einmaliges Ereignis in der Vergangenheit: <span class="sent">Als die Glocke läutete, …</span></span></li>
+        <li><span class="chip t-mod">modal</span><span>«als ob», «als wenn»: Vergleich, meist im Konjunktiv II</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 6 -->
+<section id="ueben">
+  <div class="sec-head">
+    <span class="num">5</span>
+    <h2>Üben</h2>
+    <p class="prose">Der Nebensatz ist unterstrichen. Bestimme, welche Satzart er ist. Nach jeder Antwort siehst du die Begründung mit der passenden Probe.</p>
+  </div>
+  <div class="panel quiz" id="quiz">
+    <div class="quiz-top">
+      <div class="seg" id="modes" role="group" aria-label="Übungsauswahl">
+        <button type="button" data-mode="all" aria-pressed="true">Alle Satzarten</button>
+        <button type="button" data-mode="kk" aria-pressed="false">Kausal · Konsekutiv · Final</button>
+        <button type="button" data-mode="tricky" aria-pressed="false">Stolpersteine</button>
+      </div>
+      <span class="score" id="score">0 richtig</span>
+    </div>
+    <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+    <div id="quiz-body" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+
+</section>
+
+<footer>Grundlage: Übersicht «Nebensätze inhaltlich bestimmen» (Adversativ-, Final-, Kausal-, Konditional-, Konsekutiv-, Konzessiv-, Modal- und Temporalsatz).</footer>
+</div>
+
+<script>
+const T = {
+  kaus:{name:'Kausalsatz',short:'kausal',q:'Warum? Aus welchem Grund?',lat:'lat. causa – Grund',konj:'weil, da',ers:'«weil» / «da» bleibt, «aus dem Grund, dass»',hs:'NS. <b>Deshalb</b> HS.',ex:'Ich will eine gute Note. Deshalb lerne ich viel.'},
+  kons:{name:'Konsekutivsatz',short:'konsekutiv',q:'Mit welcher Folge?',lat:'lat. consequi – folgen (Konsequenz)',konj:'(so,) dass, sodass',ers:'«sodass», «mit der Folge, dass»',hs:'HS. <b>Deshalb / folglich</b> NS.',ex:'Ich vergass zu lernen. Deshalb wusste ich fast nichts.'},
+  fin:{name:'Finalsatz',short:'final',q:'Wozu? Mit welchem Ziel?',lat:'lat. finis – Ende, Ziel',konj:'damit, dass',ers:'«um … zu» (gleiches Subjekt), «mit dem Ziel, dass»',hs:'HS. <b>Damit will ich erreichen:</b> NS.',ex:'Ich lerne viel. Damit will ich eine gute Note erreichen.'},
+  kond:{name:'Konditionalsatz',short:'konditional',q:'Unter welcher Bedingung?',lat:'lat. condicio – Bedingung',konj:'wenn, falls, sofern',ers:'«falls», «angenommen, dass»',hs:'<b>Angenommen,</b> NS. <b>Dann</b> HS.',ex:'Angenommen, wir haben viel Stoff. Dann lerne ich viel.'},
+  konz:{name:'Konzessivsatz',short:'konzessiv',q:'Trotz welchen Umstands?',lat:'lat. concedere – zugestehen',konj:'obwohl, obschon, wenn auch',ers:'«obwohl», «trotz der Tatsache, dass»',hs:'NS. <b>Trotzdem</b> HS.',ex:'Ich habe viel gelernt. Trotzdem war ich nicht erfolgreich.'},
+  adv:{name:'Adversativsatz',short:'adversativ',q:'Im Gegensatz wozu?',lat:'lat. adversus – entgegengesetzt',konj:'während, (an)statt dass, ausser wenn',ers:'«wohingegen»',hs:'HS. NS-Subjekt <b>dagegen</b> …',ex:'Ich lerne immer viel. Du dagegen musst dich nie anstrengen.'},
+  mod:{name:'Modalsatz',short:'modal',q:'Wie? Auf welche Weise? Womit?',lat:'lat. modus – Art und Weise',konj:'indem, wobei, wie wenn, als (ob)',ers:'«dadurch, dass»',hs:'HS. <b>Dabei / so</b> NS.',ex:'Ich lernte. Dabei schrieb ich die Begriffe auf Wortkärtchen.'},
+  temp:{name:'Temporalsatz',short:'temporal',q:'Wann? Seit wann? Wie lange?',lat:'lat. tempus – Zeit',konj:'nachdem, während, wenn, sobald, als, bis',ers:'«zu dem Zeitpunkt, als», «solange», «sobald»',hs:'NS. <b>Danach / gleichzeitig / dann</b> HS.',ex:'Ich war mit dem Training fertig. Danach lernte ich.'}
+};
+const FAM = ['kaus','kons','fin','kond','konz'], REST = ['temp','mod','adv'];
+const ORDER = ['kaus','kons','fin','kond','konz','temp','mod','adv'];
+
+function card(k){const t=T[k];return `<article class="card t-${k}"><h3>${t.name}</h3><p class="q">${t.q}</p><p class="lat">${t.lat}</p><p class="konj">${t.konj}</p></article>`}
+document.getElementById('cards-fam').innerHTML = FAM.map(card).join('');
+document.getElementById('cards-rest').innerHTML = REST.map(card).join('');
+
+/* Satzsammlung */
+const S = [
+ {s:'Weil der Zug Verspätung hatte, verpasste Lena den Anschluss.',ns:'Weil der Zug Verspätung hatte,',t:'kaus',g:['kk'],w:'Der Nebensatz nennt die Ursache (Verspätung), der Hauptsatz die Wirkung. Probe: «Der Zug hatte Verspätung. Deshalb verpasste Lena den Anschluss.»'},
+ {s:'Der Zug hatte so viel Verspätung, dass Lena den Anschluss verpasste.',ns:'dass Lena den Anschluss verpasste.',t:'kons',g:['kk','tricky'],w:'Gleicher Sachverhalt wie beim Kausalsatz, aber jetzt steht die Wirkung im Nebensatz. «so viel … dass» kündigt die Folge an. Probe: «Der Zug hatte viel Verspätung. Deshalb verpasste Lena den Anschluss.»'},
+ {s:'Lena nahm einen früheren Zug, damit sie den Anschluss sicher erreichte.',ns:'damit sie den Anschluss sicher erreichte.',t:'fin',g:['kk'],w:'Der Nebensatz nennt eine gewollte Wirkung, also ein Ziel. Probe: «Lena nahm einen früheren Zug, um den Anschluss sicher zu erreichen.»'},
+ {s:'Falls der Zug Verspätung hat, verpasst Lena den Anschluss.',ns:'Falls der Zug Verspätung hat,',t:'kond',g:[],w:'Die Ursache ist nur angenommen; ob der Zug Verspätung hat, ist offen. Probe: «Angenommen, der Zug hat Verspätung. Dann verpasst Lena den Anschluss.»'},
+ {s:'Obwohl der Zug Verspätung hatte, erreichte Lena den Anschluss.',ns:'Obwohl der Zug Verspätung hatte,',t:'konz',g:[],w:'Man würde erwarten, dass Lena den Anschluss verpasst. Die erwartete Wirkung bleibt aus. Probe: «Der Zug hatte Verspätung. Trotzdem erreichte Lena den Anschluss.»'},
+ {s:'Während Lena im Zug sass, lernte sie Vokabeln.',ns:'Während Lena im Zug sass,',t:'temp',g:['tricky'],w:'Beide Handlungen laufen gleichzeitig, es gibt keinen Gegensatz. Probe: «Solange Lena im Zug sass, …» passt; «wohingegen» passt nicht.'},
+ {s:'Lena lernt fleissig Vokabeln, während ihr Bruder lieber Videospiele spielt.',ns:'während ihr Bruder lieber Videospiele spielt.',t:'adv',g:['tricky'],w:'Zwei Personen werden einander gegenübergestellt. Probe: «…, wohingegen ihr Bruder lieber Videospiele spielt.» bzw. «Ihr Bruder dagegen spielt lieber Videospiele.»'},
+ {s:'Lena verbesserte ihr Französisch, indem sie jeden Abend Podcasts hörte.',ns:'indem sie jeden Abend Podcasts hörte.',t:'mod',g:[],w:'Der Nebensatz sagt, wie bzw. womit Lena ihr Französisch verbesserte. Probe: «… dadurch, dass sie jeden Abend Podcasts hörte.»'},
+ {s:'Da es draussen stürmte, wurde der Sporttag verschoben.',ns:'Da es draussen stürmte,',t:'kaus',g:['kk'],w:'Sturm = Ursache, Verschiebung = Wirkung. Die Ursache steht im Nebensatz. Probe: «Es stürmte. Deshalb wurde der Sporttag verschoben.»'},
+ {s:'Es stürmte so heftig, dass der Sporttag verschoben wurde.',ns:'dass der Sporttag verschoben wurde.',t:'kons',g:['kk'],w:'Jetzt steht die Wirkung (Verschiebung) im Nebensatz. Zeitprobe: Die Verschiebung kommt nach dem Sturm – der Nebensatz ist das Spätere.'},
+ {s:'Als die Glocke läutete, packten alle ihre Sachen.',ns:'Als die Glocke läutete,',t:'temp',g:['tricky'],w:'«als» bei einem einmaligen Ereignis in der Vergangenheit gibt den Zeitpunkt an. Probe: «In dem Moment, als die Glocke läutete, …»'},
+ {s:'Wenn du morgen krank bist, musst du ein Arztzeugnis bringen.',ns:'Wenn du morgen krank bist,',t:'kond',g:['tricky'],w:'Ob du krank bist, ist offen. Probe: «Falls du morgen krank bist, …» passt ohne Bedeutungsänderung.'},
+ {s:'Wenn ich nach Hause komme, rufe ich dich an.',ns:'Wenn ich nach Hause komme,',t:'temp',g:['tricky'],w:'Dass ich nach Hause komme, ist sicher – offen ist nur der Zeitpunkt. Probe: «Sobald ich nach Hause komme, …» passt besser als «falls».'},
+ {s:'Der Lehrer erklärte die Aufgabe so deutlich, dass alle sie verstanden.',ns:'dass alle sie verstanden.',t:'kons',g:['kk','tricky'],w:'Das Verstehen ist tatsächlich eingetreten. Probe: «…, dass alle sie verstanden – aber niemand verstand sie» ergibt einen Widerspruch. Also Folge, nicht Ziel.'},
+ {s:'Der Lehrer erklärte die Aufgabe noch einmal, damit alle sie verstanden.',ns:'damit alle sie verstanden.',t:'fin',g:['kk','tricky'],w:'Das Verstehen ist die Absicht des Lehrers. Probe: «…, damit alle sie verstanden – aber einige verstanden sie trotzdem nicht.» Kein Widerspruch, also Ziel.'},
+ {s:'Nachdem wir die Prüfung geschrieben hatten, gingen wir ins Café.',ns:'Nachdem wir die Prüfung geschrieben hatten,',t:'temp',g:[],w:'Es geht um die Reihenfolge: zuerst die Prüfung, danach das Café. Probe: «Wir schrieben die Prüfung. Danach gingen wir ins Café.»'},
+ {s:'Obschon Jonas kaum geschlafen hatte, war er im Unterricht hellwach.',ns:'Obschon Jonas kaum geschlafen hatte,',t:'konz',g:[],w:'Erwartet wäre Müdigkeit, sie bleibt aber aus. Probe: «Jonas hatte kaum geschlafen. Trotzdem war er hellwach.»'},
+ {s:'Statt dass er sich entschuldigte, lachte er nur.',ns:'Statt dass er sich entschuldigte,',t:'adv',g:[],w:'Was man erwarten könnte (Entschuldigung), wird dem Tatsächlichen gegenübergestellt; nichts verursacht etwas. Probe: «Er entschuldigte sich nicht, sondern lachte nur.»'},
+ {s:'Sofern das Wetter mitspielt, findet das Konzert im Freien statt.',ns:'Sofern das Wetter mitspielt,',t:'kond',g:[],w:'Ob das Wetter mitspielt, ist offen. Probe: «Angenommen, das Wetter spielt mit. Dann findet das Konzert im Freien statt.»'},
+ {s:'Er rannte, als ob ein Hund hinter ihm her wäre.',ns:'als ob ein Hund hinter ihm her wäre.',t:'mod',g:['tricky'],w:'Der Nebensatz beschreibt durch einen Vergleich, wie er rannte (Konjunktiv II: es ist kein Hund da). Leitfrage: «Wie rannte er?»'},
+ {s:'Mia übte täglich Klavier, sodass sie beim Vorspiel glänzte.',ns:'sodass sie beim Vorspiel glänzte.',t:'kons',g:['kk'],w:'Das Glänzen ist die tatsächliche Folge des Übens. Probe: «Mia übte täglich. Deshalb glänzte sie beim Vorspiel.»'},
+ {s:'Mia übte täglich Klavier, weil sie beim Vorspiel glänzen wollte.',ns:'weil sie beim Vorspiel glänzen wollte.',t:'kaus',g:['kk','tricky'],w:'Stolperstein: Inhaltlich klingt das nach einem Ziel. Grammatisch nennt «weil» aber den Grund – ihr Wunsch («wollte») ist die Ursache fürs Üben. Mit «damit sie glänzte» wäre es ein Finalsatz.'},
+ {s:'Wir warteten am Bahnhof, bis der letzte Bus kam.',ns:'bis der letzte Bus kam.',t:'temp',g:[],w:'Der Nebensatz markiert das Ende des Wartens auf der Zeitachse. Leitfrage: «Wie lange warteten wir?»'},
+ {s:'Auch wenn du dich beeilst, erreichst du den Bus nicht mehr.',ns:'Auch wenn du dich beeilst,',t:'konz',g:['tricky'],w:'Sich beeilen würde normalerweise helfen – hier nützt es nichts. Probe: «Du kannst dich beeilen. Trotzdem erreichst du den Bus nicht mehr.»'},
+ {s:'Sie las den Text, wobei sie wichtige Stellen markierte.',ns:'wobei sie wichtige Stellen markierte.',t:'mod',g:[],w:'Der Nebensatz beschreibt einen begleitenden Umstand: Wie las sie? Probe: «Sie las den Text. Dabei markierte sie wichtige Stellen.»'},
+ {s:'Tim brach ein, weil das Eis so dünn war.',ns:'weil das Eis so dünn war.',t:'kaus',g:['kk','tricky'],w:'Stolperstein: Das «so» steht hier im Kausalsatz und kündigt keine Folge an. Entscheidend ist: Der Nebensatz (dünnes Eis) ist die Ursache. Probe: «Das Eis war dünn. Deshalb brach Tim ein.»'},
+ {s:'Das Eis war so dünn, dass Tim einbrach.',ns:'dass Tim einbrach.',t:'kons',g:['kk'],w:'Das Einbrechen ist die Wirkung und steht im Nebensatz. Zeitprobe: Zuerst ist das Eis dünn, dann bricht Tim ein – der Nebensatz ist das Spätere.'},
+ {s:'Ich bleibe heute zu Hause, da ich Fieber habe.',ns:'da ich Fieber habe.',t:'kaus',g:['kk'],w:'Fieber = Ursache, zu Hause bleiben = Wirkung. Auch wenn der Nebensatz hinten steht, bleibt er die Ursache. Probe: «Ich habe Fieber. Deshalb bleibe ich zu Hause.»'}
+];
+
+const MINI = {
+  kaus:['ns','Nebensatz · Ursache','⟶','hs','Hauptsatz · Wirkung'],
+  kons:['hs','Hauptsatz · Ursache','⟶','ns','Nebensatz · Wirkung'],
+  fin:['hs','Hauptsatz · Handlung','⇢','ns','Nebensatz · Ziel (gewollt)'],
+  kond:['ns','Nebensatz · Bedingung (?)','⟶','hs','Hauptsatz · Folge'],
+  konz:['ns','Nebensatz · Gegengrund','⟶✕','hs','Hauptsatz · trotzdem']
+};
+function mini(k){
+  const m = MINI[k]; if(!m) return '';
+  return `<div class="mini t-${k}" aria-label="Pfeil-Schema"><span class="m ${m[0]}">${m[1]}</span><span class="ma">${m[2]}</span><span class="m ${m[3]}">${m[4]}</span></div>`;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function markNS(item){
+  const i = item.s.indexOf(item.ns);
+  if(i<0) return esc(item.s);
+  return esc(item.s.slice(0,i)) + `<span class="nsmark">${esc(item.ns)}</span>` + esc(item.s.slice(i+item.ns.length));
+}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+
+/* Quiz */
+const Q = {mode:'all', list:[], i:0, right:0, answered:false, wrong:[]};
+const qb = document.getElementById('quiz-body');
+function startRound(mode){
+  Q.mode = mode;
+  Q.list = shuffle(mode==='all' ? S : S.filter(x=>x.g.includes(mode)));
+  Q.i = 0; Q.right = 0; Q.wrong = [];
+  document.querySelectorAll('#modes button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mode===mode)));
+  renderQ();
+}
+function renderQ(){
+  const n = Q.list.length;
+  document.getElementById('score').textContent = `${Q.right} von ${Q.i} richtig`;
+  document.getElementById('bar').style.width = (Q.i/n*100)+'%';
+  if(Q.i>=n){ return renderSummary(); }
+  const it = Q.list[Q.i]; Q.answered = false;
+  const allowed = Q.mode==='kk' ? ['kaus','kons','fin'] : ORDER;
+  qb.innerHTML = `
+    <p class="qcount">Satz ${Q.i+1} von ${n}</p>
+    <p class="qsent t-${it.t}" id="qsent">${markNS(it)}</p>
+    <p class="qhelp">Unterstrichen: der Nebensatz</p>
+    <div class="choices" id="choices">${allowed.map(k=>`<button type="button" class="choice t-${k}" data-k="${k}">${T[k].name}</button>`).join('')}</div>
+    <div id="fb"></div>
+    <div class="qactions">
+      <button type="button" class="btn ghost" id="tip">Tipp anzeigen</button>
+      <button type="button" class="btn primary" id="next" hidden>${Q.i+1<n?'Nächster Satz':'Auswertung'}</button>
+    </div>`;
+  qb.querySelectorAll('.choice').forEach(b=>b.addEventListener('click',()=>answer(b.dataset.k)));
+  document.getElementById('next').addEventListener('click',()=>{Q.i++;renderQ()});
+  document.getElementById('tip').addEventListener('click',e=>{
+    const fb = document.getElementById('fb');
+    if(Q.answered) return;
+    fb.innerHTML = `<div class="tipbox"><b>So gehst du vor:</b><ul>
+      <li>Gibt der Nebensatz eine Zeit, einen Weg oder einen Gegensatz an?</li>
+      <li>Sonst: Steht im Nebensatz die <b>Ursache</b> oder die <b>Wirkung</b>? Was geschieht zuerst?</li>
+      <li>Probiere «deshalb», «trotzdem», «falls», «um … zu», «wohingegen», «dadurch, dass».</li></ul></div>`;
+    e.currentTarget.hidden = true;
+  });
+}
+function answer(k){
+  if(Q.answered) return; Q.answered = true;
+  const it = Q.list[Q.i], ok = k===it.t;
+  if(ok) Q.right++; else Q.wrong.push({it, k});
+  document.getElementById('qsent').classList.add('done');
+  qb.querySelectorAll('.choice').forEach(b=>{
+    b.disabled = true;
+    if(b.dataset.k===it.t) b.classList.add('right');
+    else if(b.dataset.k===k) b.classList.add('wrong');
+  });
+  const t = T[it.t];
+  const wrongNote = ok ? '' : `<p style="font-size:.9rem;color:var(--muted)">Du hast <b>${T[k].name}</b> gewählt. Dessen Leitfrage wäre «${T[k].q}» – die passt hier nicht.</p>`;
+  document.getElementById('fb').innerHTML = `
+    <div class="feedback ${ok?'ok':'no'}">
+      <p class="verdict">${ok?'Richtig':'Nicht ganz'}: <span class="t-${it.t}" style="color:var(--c)">${t.name}</span> · ${t.q}</p>
+      ${mini(it.t)}
+      <p>${it.w}</p>
+      ${wrongNote}
+    </div>`;
+  document.getElementById('tip').hidden = true;
+  const nx = document.getElementById('next'); nx.hidden = false; nx.focus({preventScroll:true});
+  document.getElementById('score').textContent = `${Q.right} von ${Q.i+1} richtig`;
+}
+function renderSummary(){
+  const n = Q.list.length;
+  document.getElementById('score').textContent = `${Q.right} von ${n} richtig`;
+  qb.innerHTML = `<div class="summary">
+    <p class="big">${Q.right} / ${n}</p>
+    ${Q.wrong.length ? `<p><b>Diese Sätze lohnen einen zweiten Blick:</b></p><ul>${Q.wrong.map(w=>`<li><span class="sent">${esc(w.it.s)}</span><br><span style="font-size:.88rem;color:var(--muted)">deine Antwort: ${T[w.k].name} · richtig: <b class="t-${w.it.t}" style="color:var(--c)">${T[w.it.t].name}</b></span></li>`).join('')}</ul>` : '<p>Alles richtig. Versuch es mit einer anderen Auswahl.</p>'}
+    <div class="qactions"><button type="button" class="btn primary" id="again">Neue Runde</button></div>
+  </div>`;
+  document.getElementById('again').addEventListener('click',()=>startRound(Q.mode));
+}
+document.querySelectorAll('#modes button').forEach(b=>b.addEventListener('click',()=>startRound(b.dataset.mode)));
+startRound('all');
+
+/* Bestimmungsweg */
+const TREE = {
+  q1:{q:'Gibt der Nebensatz an, wann etwas geschieht?',short:'Zeit?',hint:'Vorher, gleichzeitig oder nachher? Probe: «zu dem Zeitpunkt, als …», «solange», «sobald». Achtung bei «während»: Geht es um einen Gegensatz, antworte mit Nein.',opts:[['Ja','temp'],['Nein','q2']]},
+  q2:{q:'Sagt der Nebensatz, wie oder womit die Handlung im Hauptsatz geschieht?',short:'Art und Weise?',hint:'Probe: «dadurch, dass …» oder «dabei …» passt. Auch Vergleiche mit «als ob» gehören hierher.',opts:[['Ja','mod'],['Nein','q3']]},
+  q3:{q:'Werden zwei Dinge nur einander gegenübergestellt, ohne dass das eine das andere bewirken müsste?',short:'Nur Gegensatz?',hint:'Oft zwei verschiedene Personen oder Seiten. Probe: «wohingegen», «B dagegen …». Passt «trotzdem», antworte mit Nein.',opts:[['Ja, nur ein Gegensatz','adv'],['Nein','q4']]},
+  q4:{q:'Dann geht es um Ursache und Wirkung. Was steht im Nebensatz?',short:'Ursache oder Wirkung?',hint:'Zeitprobe: Was geschieht zuerst? Das Frühere ist die Ursache, das Spätere die Wirkung.',opts:[['Die Ursache','q5'],['Die Wirkung','q7']]},
+  q5:{q:'Ist diese Ursache tatsächlich gegeben oder nur angenommen?',short:'Tatsächlich?',hint:'Probe: Passt «angenommen, …» oder «falls», ist sie nur angenommen.',opts:[['Nur angenommen','kond'],['Tatsächlich gegeben','q6']]},
+  q6:{q:'Tritt die Wirkung ein, die man erwarten würde?',short:'Wie erwartet?',hint:'Probe: Passt «NS. Deshalb HS.», ist die Erwartung erfüllt. Passt nur «NS. Trotzdem HS.», wird sie enttäuscht.',opts:[['Ja, wie erwartet','kaus'],['Nein, das Gegenteil','konz']]},
+  q7:{q:'Ist die Wirkung tatsächlich eingetreten oder nur beabsichtigt?',short:'Eingetreten?',hint:'Probe: Hänge «…, aber es klappte nicht» an. Widerspruch → eingetreten. Kein Widerspruch → nur beabsichtigt.',opts:[['Tatsächlich eingetreten','kons'],['Nur beabsichtigt (Ziel)','fin']]}
+};
+let path = []; // [{node, label}]
+const nodeEl = document.getElementById('node'), trailEl = document.getElementById('trail');
+function current(){return path.length ? path[path.length-1].next : 'q1'}
+function renderTree(){
+  trailEl.innerHTML = path.length ? path.map((p,i)=>`<li><button type="button" data-i="${i}" title="Zu diesem Schritt zurück">${TREE[p.node].short} <b>${p.label}</b></button></li>`).join('') : '<li class="empty" style="display:block">Noch keine Schritte. Beginne rechts mit der ersten Frage.</li>';
+  trailEl.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{path = path.slice(0, +b.dataset.i); renderTree()}));
+  const cur = current();
+  if(T[cur]){
+    const t = T[cur];
+    nodeEl.innerHTML = `<div class="result t-${cur}"><p class="eyebrow">Ergebnis</p><h3>${t.name}</h3><p><b>${t.q}</b></p>${mini(cur)}<p style="font-size:.92rem">Gegenprobe: ${t.hs} <span class="sent" style="color:var(--muted)">${t.ex}</span></p></div>
+      <div class="opts"><button type="button" class="btn ghost" id="tree-back">Einen Schritt zurück</button><button type="button" class="btn primary" id="tree-reset">Neuer Satz</button></div>`;
+    document.getElementById('tree-back').onclick = ()=>{path.pop(); renderTree()};
+    document.getElementById('tree-reset').onclick = ()=>{path=[]; randomSample(); renderTree()};
+    return;
+  }
+  const n = TREE[cur];
+  nodeEl.innerHTML = `<p class="eyebrow">Schritt ${path.length+1}</p><p class="q">${n.q}</p><p class="hint">${n.hint}</p>
+    <div class="opts">${n.opts.map((o,i)=>`<button type="button" class="btn" data-i="${i}">${o[0]}</button>`).join('')}</div>`;
+  nodeEl.querySelectorAll('.opts .btn').forEach(b=>b.addEventListener('click',()=>{
+    const o = n.opts[+b.dataset.i]; path.push({node:cur,label:o[0],next:o[1]}); renderTree();
+  }));
+}
+function randomSample(){document.getElementById('sample-input').value = S[Math.floor(Math.random()*S.length)].s}
+
+
+/* Umformen entfernt */
+const TR = [];
+void TR.map((x,i)=>`
+  <div class="panel trans">
+    <p class="facts"><span>${x.u}</span><span class="ar">Ursache ⟶ Wirkung</span><span>${x.w}</span></p>
+    <label for="tk${i}" class="t-kaus" style="color:var(--c)">Als Kausalsatz</label>
+    <textarea id="tk${i}" placeholder="weil / da …"></textarea>
+    <label for="tc${i}" class="t-kons" style="color:var(--c)">Als Konsekutivsatz</label>
+    <textarea id="tc${i}" placeholder="sodass / so … dass …"></textarea>
+    <div><button type="button" class="btn ghost" data-sol="${i}" aria-expanded="false">Lösung zeigen</button></div>
+    <div class="sol" id="sol${i}" hidden>
+      <p class="t-kaus"><b>Kausal</b><br>${x.k}</p>
+      <p class="t-kons"><b>Konsekutiv</b><br>${x.c}</p>
+    </div>
+  </div>`).join('');
+</script>
+</body>
+</html>
